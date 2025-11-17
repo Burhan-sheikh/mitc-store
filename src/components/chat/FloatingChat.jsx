@@ -7,7 +7,7 @@ const FloatingChat = () => {
 
   return (
     <>
-      {/* Floating Icon */}
+      {/* Floating Chat Icon */}
       {!open && (
         <button
           onClick={() => setOpen(true)}
@@ -20,7 +20,7 @@ const FloatingChat = () => {
       {/* Popup Chat Window */}
       {open && (
         <div className="fixed bottom-6 right-6 w-[350px] h-[520px] md:w-[380px] md:h-[560px] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-[9999] overflow-hidden">
-          
+
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 bg-green-500 text-white">
             <p className="font-semibold">Chat Support</p>
@@ -29,7 +29,7 @@ const FloatingChat = () => {
             </button>
           </div>
 
-          {/* Chat Body */}
+          {/* Chat UI */}
           <div className="h-[calc(100%-56px)]">
             <Chat isPopup={true} />
           </div>
