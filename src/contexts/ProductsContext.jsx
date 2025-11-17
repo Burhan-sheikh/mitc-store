@@ -1,11 +1,12 @@
 // FILE PURPOSE:
-// - Manage products state and provide to all components
-// - Handle product CRUD operations
+// - Manage products state with real-time Firestore sync
+// - Handle product CRUD operations with proper error handling
+// - Fixed: Products now properly save to Firestore
 // - Provide filtering and sorting functionality
-// - Cache products data to reduce Firestore reads
 
 import { createContext, useContext, useState, useEffect } from 'react';
-import { firestoreHelpers, collections, query, where, orderBy } from '../config/firestore';
+import { collection, query, where, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { db } from '../config/firestore';
 
 const ProductsContext = createContext();
 
@@ -22,83 +23,107 @@ export const ProductsProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch all published products
-  const fetchProducts = async () => {
-    try {
-      setLoading(true);
-      const productsData = await firestoreHelpers.getCollection(
-        collections.products,
-        [where('isPublished', '==', true), orderBy('createdAt', 'desc')]
-      );
-      setProducts(productsData);
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching products:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Real-time subscription to products
+  useEffect(() => {
+    const productsRef = collection(db, 'products');
+    const q = query(productsRef, orderBy('createdAt', 'desc'));
 
-  // Fetch all products (including unpublished) - for admin
-  const fetchAllProducts = async () => {
-    try {
-      setLoading(true);
-      const productsData = await firestoreHelpers.getCollection(
-        collections.products,
-        [orderBy('createdAt', 'desc')]
-      );
-      setProducts(productsData);
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching all products:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const unsubscribe = onSnapshot(q, 
+      (snapshot) => {
+        const loadedProducts = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate(),
+          updatedAt: doc.data().updatedAt?.toDate()
+        }));
+        setProducts(loadedProducts);
+        setLoading(false);
+        setError(null);
+      },
+      (err) => {
+        console.error('Error fetching products:', err);
+        setError(err.message);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
 
   // Get product by ID
   const getProductById = async (id) => {
     try {
-      return await firestoreHelpers.getDocument(collections.products, id);
+      const docRef = doc(db, 'products', id);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() };
+      }
+      return null;
     } catch (err) {
       console.error('Error fetching product:', err);
       throw err;
     }
   };
 
-  // Create new product
+  // Create new product - FIXED: Now properly saves to Firestore
   const createProduct = async (productData) => {
     try {
-      const id = await firestoreHelpers.createDocument(collections.products, productData);
-      await fetchProducts();
-      return id;
+      setLoading(true);
+      const productsRef = collection(db, 'products');
+      
+      const newProduct = {
+        ...productData,
+        starRatings: 0,
+        reviewCount: 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+
+      const docRef = await addDoc(productsRef, newProduct);
+      console.log('Product created successfully with ID:', docRef.id);
+      return docRef.id;
     } catch (err) {
       console.error('Error creating product:', err);
+      setError(err.message);
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
   // Update product
   const updateProduct = async (id, updates) => {
     try {
-      await firestoreHelpers.updateDocument(collections.products, id, updates);
-      await fetchProducts();
+      setLoading(true);
+      const docRef = doc(db, 'products', id);
+      await updateDoc(docRef, {
+        ...updates,
+        updatedAt: serverTimestamp()
+      });
+      console.log('Product updated successfully');
     } catch (err) {
       console.error('Error updating product:', err);
+      setError(err.message);
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
   // Delete product
   const deleteProduct = async (id) => {
     try {
-      await firestoreHelpers.deleteDocument(collections.products, id);
-      await fetchProducts();
+      setLoading(true);
+      const docRef = doc(db, 'products', id);
+      await deleteDoc(docRef);
+      console.log('Product deleted successfully');
     } catch (err) {
       console.error('Error deleting product:', err);
+      setError(err.message);
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -106,13 +131,17 @@ export const ProductsProvider = ({ children }) => {
   const duplicateProduct = async (id) => {
     try {
       const original = await getProductById(id);
+      if (!original) throw new Error('Product not found');
+
       const { id: _, createdAt, updatedAt, ...productData } = original;
       const duplicated = {
         ...productData,
         title: `${productData.title} (Copy)`,
         isPublished: false,
       };
+      
       const newId = await createProduct(duplicated);
+      console.log('Product duplicated successfully');
       return newId;
     } catch (err) {
       console.error('Error duplicating product:', err);
@@ -120,16 +149,10 @@ export const ProductsProvider = ({ children }) => {
     }
   };
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
   const value = {
     products,
     loading,
     error,
-    fetchProducts,
-    fetchAllProducts,
     getProductById,
     createProduct,
     updateProduct,
