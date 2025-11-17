@@ -3,7 +3,7 @@
 // - Export common Firestore functions for CRUD operations
 // - Provide utility functions for querying and writing data
 
-import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where, orderBy, limit, addDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where, orderBy, limit, addDoc, serverTimestamp, writeBatch, onSnapshot } from 'firebase/firestore';
 import app from './firebase.config';
 
 // Initialize Firestore
@@ -78,5 +78,5 @@ export const firestoreHelpers = {
   },
 };
 
-export { db, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where, orderBy, limit, addDoc, serverTimestamp, writeBatch };
+export { db, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where, orderBy, limit, addDoc, serverTimestamp, writeBatch, onSnapshot };
 export default db;
