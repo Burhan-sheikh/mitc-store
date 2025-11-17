@@ -13,6 +13,7 @@
     "browser-image-compression": "^2.0.2",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
+    "esbuild": "^0.27.0",
     "esbuild-wasm": "^0.27.0",
     "firebase": "^10.13.0",
     "force": "^0.0.3",
