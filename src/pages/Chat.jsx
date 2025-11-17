@@ -102,7 +102,7 @@ const Chat = () => {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-2xl rounded-3xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden"
-          style={{ height: 'calc(100vh - 250px)', minHeight: '500px' }}
+          style={{ height: 'calc(60vh - 250px)', minHeight: '500px' }}
         >
           <div className="h-full flex flex-col">
             {/* Messages Area */}
