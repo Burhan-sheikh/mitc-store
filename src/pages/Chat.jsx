@@ -99,7 +99,7 @@ const Chat = () => {
         
         {/* Chat Container - Glassmorphism */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.85 }}
+          initial={{ opacity: 0, scale: 0.15 }}
           animate={{ opacity: 1, scale: 1 }}
           className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-2xl rounded-3xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden"
           style={{ height: 'calc(100vh - 250px)', minHeight: '500px' }}
